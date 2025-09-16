@@ -20,34 +20,6 @@ const pageVariants = {
   exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
 };
 
-// Protected route component
-const ProtectedRoute = ({ children, roles }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-medium-blue"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-  if (roles && user) {
-    const hasRequiredRole = Array.isArray(roles)
-      ? roles.some((role) => user.roles.includes(role))
-      : user.roles.includes(roles);
-    if (!hasRequiredRole) return <Navigate to="/unauthorized" replace />;
-  }
-
-  return children;
-};
-
-const AdminRoute = ({ children }) => (
-  <ProtectedRoute roles={['admin']}>{children}</ProtectedRoute>
-);
-
 const Layout = ({ children, showSidebar = false }) => (
   <div className="min-h-screen bg-light-gray">
     <Navbar />
@@ -81,21 +53,20 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const result = await login({ email, password }); // pass object
-    if (result.success) {
-      navigate('/');
-    } else {
-      alert(result.message || 'Login failed. Check your credentials.');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const result = await login({ email, password }); // pass object
+      if (result.success) {
+        navigate('/');
+      } else {
+        alert(result.message || 'Login failed. Check your credentials.');
+      }
+    } catch (err) {
+      alert('Login failed. Check your credentials.');
+      console.error(err);
     }
-  } catch (err) {
-    alert('Login failed. Check your credentials.');
-    console.error(err);
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-light-gray">
@@ -282,56 +253,5 @@ const ResetPasswordPage = () => {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="password" className="block text-dark-gray text-sm font-medium mb-2">New Password</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-medium-gray rounded-md focus:outline-none focus:ring-2 focus:ring-medium-blue" required />
-          </div>
-          <div className="mb-6">
-            <label htmlFor="confirm-password" className="block text-dark-gray text-sm font-medium mb-2">Confirm New Password</label>
-            <input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-medium-gray rounded-md focus:outline-none focus:ring-2 focus:ring-medium-blue" required />
-          </div>
-          <button type="submit" className="w-full bg-medium-blue text-white py-2 px-4 rounded-md hover:bg-dark-blue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-medium-blue">Reset Password</button>
-        </form>
-      </div>
-    </div>
-  );
-};
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-medium-gray rounded-
 
-// -------------------- Main App and Routes --------------------
-
-const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
-
-  return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-      {/* Protected routes */}
-      <Route path="/" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
-      <Route path="/alumni" element={<ProtectedRoute><Layout><Alumni /></Layout></ProtectedRoute>} />
-      <Route path="/events" element={<ProtectedRoute><Layout><Events /></Layout></ProtectedRoute>} />
-      <Route path="/jobs" element={<ProtectedRoute><Layout><Jobs /></Layout></ProtectedRoute>} />
-      <Route path="/mentorship" element={<ProtectedRoute><Layout><Mentorship /></Layout></ProtectedRoute>} />
-      <Route path="/fundraising" element={<ProtectedRoute><Layout><Fundraising /></Layout></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
-
-      {/* Admin route */}
-      <Route path="/admin/*" element={<AdminRoute><Layout showSidebar={true}><div>Admin Dashboard</div></Layout></AdminRoute>} />
-
-      {/* Catch-all */}
-      <Route path="*" element={<div className="text-center mt-20">Page Not Found</div>} />
-    </Routes>
-  );
-};
-
-const App = () => (
-  <AuthProvider>
-    <Router>
-      <AppRoutes />
-    </Router>
-  </AuthProvider>
-);
-
-export default App;
